@@ -1,0 +1,92 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--c-text);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.brand-icon { font-size: 22px; }
+.brand-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -.01em;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,.6);
+  transition: background .15s, color .15s;
+}
+.nav-link:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.9); }
+.nav-link--active {
+  background: var(--c-accent);
+  color: #fff;
+  font-weight: 500;
+}
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sidebar-footer {
+  padding: 14px 20px;
+  font-size: 12px;
+  color: rgba(255,255,255,.25);
+  border-top: 1px solid rgba(255,255,255,.07);
+  font-family: var(--font-mono);
+}
+
+/* ── Main content ────────────────────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  padding: 32px 36px;
+  max-width: 1200px;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.page-title { font-size: 22px; font-weight: 600; color: var(--c-text); }
+.page-subtitle { font-size: 14px; color: var(--c-text-3); margin-top: 3px; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; }
+  .sidebar-nav { flex-direction: row; padding: 8px; }
+  .main-content { padding: 20px 16px; }
+}

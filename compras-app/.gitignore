@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+service_account.json
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# IDEs
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
