@@ -1,4 +1,4 @@
-.grilla-card { padding: 0; overflow: hidden; }
+.grilla-card { padding: 0; overflow: visible; }
 
 .grilla-header {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -10,16 +10,21 @@
 
 .grilla {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 0;
+  overflow-x: auto;
 }
 
 .grilla-col {
-  padding: 16px 12px;
+  padding: 16px 8px;
   border-right: 1px solid var(--c-border);
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
   transition: background .15s;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
 }
+.grilla-col:hover { z-index: 2; }
 .grilla-col:last-child { border-right: none; }
 .grilla-col--assigned  { background: #f0faf4; }
 
@@ -27,26 +32,31 @@
   display: flex; flex-direction: column; align-items: center;
 }
 .day-name {
-  font-size: 13px; font-weight: 600; text-transform: uppercase;
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
   letter-spacing: .06em; color: var(--c-text-2);
 }
-.day-date { font-size: 11px; color: var(--c-text-3); font-family: var(--font-mono); }
+.day-date { font-size: 10px; color: var(--c-text-3); font-family: var(--font-mono); }
 
-.grilla-select { font-size: 12px; padding: 6px 8px; }
+.grilla-select {
+  font-size: 11px; padding: 5px 4px; min-width: 0;
+  position: relative; z-index: 10;
+  cursor: pointer;
+}
 
 .grilla-assigned-badge {
-  font-size: 11px;
+  font-size: 10px;
   background: var(--c-accent-lt);
   color: var(--c-accent);
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: var(--radius-sm);
   font-weight: 500;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .grilla-empty-hint {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--c-text-3);
   text-align: center;
 }
@@ -64,8 +74,9 @@
 }
 .alert-amber { background: var(--c-amber-lt); color: var(--c-amber); }
 
-@media (max-width: 900px) {
-  .grilla { grid-template-columns: repeat(3, 1fr); }
-  .grilla-col:nth-child(3) { border-right: none; }
-  .grilla-col:nth-child(4) { border-top: 1px solid var(--c-border); }
+@media (max-width: 1100px) {
+  .grilla { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 700px) {
+  .grilla { grid-template-columns: repeat(2, 1fr); }
 }
