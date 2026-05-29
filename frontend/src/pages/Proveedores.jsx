@@ -139,7 +139,17 @@ export default function Proveedores() {
                       </td>
                       <td>{p.MinimoCompra ? `$${p.MinimoCompra}` : "—"}</td>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: "13px" }}>
-                        {p.Telefono || "—"}
+                        {p.Telefono ? (
+                          <a
+                            href={`https://wa.me/${p.Telefono.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "var(--c-primary)", textDecoration: "none", cursor: "pointer" }}
+                            title="Abrir chat de WhatsApp"
+                          >
+                            📱 {p.Telefono}
+                          </a>
+                        ) : "—"}
                       </td>
                       <td>
                         <div className="row-actions">
