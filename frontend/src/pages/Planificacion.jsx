@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useApi } from "../hooks/useApi";
 import {
@@ -7,29 +7,68 @@ import {
 } from "../api/client";
 import "./Planificacion.css";
 
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  return date;
+}
+
+function formatDate(d) {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatISO(d) {
+  return d.toISOString().split("T")[0];
+}
+
+const DAY_NAMES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
+const DAY_SHORT = ["LU", "MA", "MI", "JU", "VI", "SA", "DO"];
+
 export default function Planificacion() {
-  // ── Datos maestros ────────────────────────────────────────────────────────
   const { data: semanaInfo } = useApi(getSemanaActual, [], { transform: (d) => d });
   const { data: proveedores } = useApi(getProveedores, [], { transform: (d) => d.items ?? [] });
-  const { data: unidades }    = useApi(getUnidades, [],    { transform: (d) => d.items ?? [] });
+  const { data: unidades } = useApi(getUnidades, [], { transform: (d) => d.items ?? [] });
 
   const semana = semanaInfo?.semana;
-  const dias   = semanaInfo?.dias ?? [];
 
-  // ── Estado de la grilla ───────────────────────────────────────────────────
-  // grilla: { "Lunes": { proveedorId, proveedorNombre }, "Martes": null, ... }
-  const [grilla,    setGrilla]    = useState({});
+  // ── Rango de fechas ──────────────────────────────────────────────────────
+  const mondayOfThisWeek = useMemo(() => getMonday(new Date()), []);
+  const [fechaInicio, setFechaInicio] = useState(formatISO(mondayOfThisWeek));
+
+  const fechaFin = useMemo(() => {
+    const start = new Date(fechaInicio + "T12:00:00");
+    const end = new Date(start);
+    end.setDate(start.getDate() + 5); // 6 días (Lu a Sa)
+    return formatISO(end);
+  }, [fechaInicio]);
+
+  // Generar días del rango
+  const dias = useMemo(() => {
+    const result = [];
+    const start = new Date(fechaInicio + "T12:00:00");
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      result.push({
+        dia: DAY_NAMES[d.getDay() === 0 ? 6 : d.getDay() - 1],
+        fecha: formatDate(d),
+        dayIndex: d.getDay() === 0 ? 6 : d.getDay() - 1,
+      });
+    }
+    return result;
+  }, [fechaInicio]);
+
+  // ── Estado de la grilla ──────────────────────────────────────────────────
+  const [grilla, setGrilla] = useState({});
   const [unidadSel, setUnidadSel] = useState("");
-  const [saving,    setSaving]    = useState(false);
-
-  // ── Ya guardado esta semana? ──────────────────────────────────────────────
+  const [saving, setSaving] = useState(false);
   const [yaGuardado, setYaGuardado] = useState(false);
 
   useEffect(() => {
-    if (dias.length) {
-      setGrilla(Object.fromEntries(dias.map(({ dia }) => [dia, null])));
-    }
-  }, [semanaInfo]);
+    setGrilla(Object.fromEntries(dias.map(({ dia }) => [dia, null])));
+  }, [dias]);
 
   useEffect(() => {
     if (semana && unidadSel) {
@@ -42,7 +81,7 @@ export default function Planificacion() {
     }
   }, [semana, unidadSel]);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   function getProveedorById(id) {
     return (proveedores || []).find((p) => p.ID === id);
@@ -65,7 +104,6 @@ export default function Planificacion() {
         `${prov.NombreFantasia} no entrega los ${dia}.\nDías disponibles: ${diasPermitidos.join(", ")}.`,
         { duration: 5000 }
       );
-      // Reset el select a "ninguno"
       setGrilla((prev) => ({ ...prev, [dia]: null }));
       return;
     }
@@ -82,9 +120,9 @@ export default function Planificacion() {
     const items = Object.entries(grilla)
       .filter(([, v]) => v !== null)
       .map(([dia, v]) => ({
-        SemanaCodigo:    semana,
+        SemanaCodigo: semana,
         UnidadNegocioID: unidadSel,
-        ProveedorID:     v.proveedorId,
+        ProveedorID: v.proveedorId,
         DiaSeleccionado: dia,
       }));
 
@@ -96,7 +134,6 @@ export default function Planificacion() {
       toast.success(res.data.message);
       setYaGuardado(true);
     } catch (err) {
-      // Los errores bulk vienen con detalle estructurado
       const errores = err.response?.data?.detail?.errores;
       if (errores) {
         errores.forEach((e) => toast.error(`${e.proveedor ?? "Ítem"}: ${e.error}`));
@@ -106,7 +143,7 @@ export default function Planificacion() {
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────
 
   const asignados = Object.values(grilla).filter(Boolean).length;
 
@@ -123,17 +160,37 @@ export default function Planificacion() {
         </div>
       </div>
 
-      {/* ── Selector de UN ─────────────────────────────────────────────── */}
+      {/* ── Selector de UN y rango de fechas ────────────────────────────── */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="field" style={{ maxWidth: 320 }}>
-          <label>Unidad de negocio</label>
-          <select className="input" value={unidadSel}
-            onChange={(e) => setUnidadSel(e.target.value)}>
-            <option value="">— Seleccioná una unidad —</option>
-            {(unidades || []).map((u) => (
-              <option key={u.ID} value={u.ID}>{u.NombreUnidad}</option>
-            ))}
-          </select>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div className="field" style={{ flex: "1 1 250px" }}>
+            <label>Unidad de negocio</label>
+            <select className="input" value={unidadSel}
+              onChange={(e) => setUnidadSel(e.target.value)}>
+              <option value="">— Seleccioná una unidad —</option>
+              {(unidades || []).map((u) => (
+                <option key={u.ID} value={u.ID}>{u.NombreUnidad}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ flex: "1 1 160px" }}>
+            <label>Fecha inicio</label>
+            <input
+              type="date"
+              className="input"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ flex: "1 1 160px" }}>
+            <label>Fecha fin</label>
+            <input
+              type="date"
+              className="input"
+              value={fechaFin}
+              disabled
+            />
+          </div>
         </div>
         {yaGuardado && (
           <div className="alert alert-amber" style={{ marginTop: 12 }}>
@@ -146,7 +203,11 @@ export default function Planificacion() {
       <div className="card grilla-card">
         <div className="grilla-header">
           <span className="grilla-label">Grilla de la semana</span>
-          <span className="grilla-hint">Los proveedores solo aparecen disponibles si entregan ese día</span>
+          <span className="grilla-hint">
+            {unidadSel
+              ? "Seleccioná un proveedor en cada día"
+              : "Primero seleccioná una Unidad de Negocio arriba"}
+          </span>
         </div>
 
         <div className="grilla">
@@ -160,7 +221,7 @@ export default function Planificacion() {
             return (
               <div key={dia} className={"grilla-col" + (asignacion ? " grilla-col--assigned" : "")}>
                 <div className="grilla-day">
-                  <span className="day-name">{dia.slice(0,2)}</span>
+                  <span className="day-name">{DAY_SHORT[dias.findIndex(d => d.dia === dia)]}</span>
                   <span className="day-date">{fecha}</span>
                 </div>
 
@@ -168,7 +229,6 @@ export default function Planificacion() {
                   className="input grilla-select"
                   value={asignacion?.proveedorId ?? ""}
                   onChange={(e) => handleAsignar(dia, e.target.value)}
-                  disabled={!unidadSel}
                 >
                   <option value="">—</option>
                   {provs.map((p) => (
@@ -182,9 +242,9 @@ export default function Planificacion() {
                     ✓ {asignacion.proveedorNombre}
                   </div>
                 )}
-                {!asignacion && unidadSel && (
+                {!asignacion && (
                   <div className="grilla-empty-hint">
-                    {provs.length} disp.
+                    {provs.length} proveedor{provs.length !== 1 ? "es" : ""} disp.
                   </div>
                 )}
               </div>
