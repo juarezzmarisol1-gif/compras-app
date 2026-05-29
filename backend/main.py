@@ -5,6 +5,14 @@ Ejecutar localmente: uvicorn main:app --reload --port 8000
 """
 
 import os
+import sys
+
+# ── sys.path: ensure backend/ is on the Python path (Vercel fix) ────────────
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+# ─────────────────────────────────────────────────────────────────────────────
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
